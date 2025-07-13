@@ -1,0 +1,8 @@
+pillow
+argparse
+ksupk
+numpy
+tqdm
+gradio
+pyyaml
+pdf2image
