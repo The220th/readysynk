@@ -4,6 +4,7 @@ import gradio as gr
 
 from readysynk.ramdb import RAMDB
 from readysynk.gradio_global import check_password_or_raise
+from PIL import Image
 
 
 def sync_table_button_fn(password: str):
@@ -11,9 +12,23 @@ def sync_table_button_fn(password: str):
     try:
         ramdb = RAMDB()
         table, hashes = ramdb.get_ready_users_table()
-        return table, gr.update(choices=hashes, value=hashes[0])
+        if len(hashes) == 0 or table is None or hashes is None:
+            return table, gr.update(choices=[], value=None)
+        else:
+            return table, gr.update(choices=hashes, value=hashes[0])
     except Exception as e:
         raise gr.Error(str(e))
+
+
+def show_table_fn(password: str):
+    try:
+        check_password_or_raise(password)
+        ramdb = RAMDB()
+        table, _ = ramdb.get_ready_users_table()
+        return table
+    except Exception as e:
+        return
+
 
 def reset_ready_button_fn(password: str):
     check_password_or_raise(password)
@@ -21,18 +36,34 @@ def reset_ready_button_fn(password: str):
         ramdb = RAMDB()
         ramdb.set_all_unready()
         table, hashes = ramdb.get_ready_users_table()
-        return table, gr.update(choices=hashes, value=hashes[0])
+        if len(hashes) == 0 or table is None or hashes is None:
+            return table, gr.update(choices=[], value=None)
+        else:
+            return table, gr.update(choices=hashes, value=hashes[0])
     except Exception as e:
         raise gr.Error(str(e))
+
+
+def split_user_hash(user_hash: str) -> tuple[str, str]:
+    sep_str = ":::"
+    sep = user_hash.find(sep_str)
+    if sep != -1:
+        return user_hash[:sep], user_hash[sep+len(sep_str):]
+    else:
+        return user_hash, ""
 
 
 def user_set_unready_fn(password: str, user_hash: str):
     check_password_or_raise(password)
     try:
         ramdb = RAMDB()
+        user_hash, _ = split_user_hash(user_hash)
         ramdb.set_unready(user_hash)
         table, hashes = ramdb.get_ready_users_table()
-        return table, gr.update(choices=hashes, value=hashes[0])
+        if len(hashes) == 0 or table is None or hashes is None:
+            return table, gr.update(choices=[], value=None)
+        else:
+            return table, gr.update(choices=hashes, value=hashes[0])
     except Exception as e:
         raise gr.Error(str(e))
 
@@ -41,6 +72,7 @@ def user_delete_fn(password: str, user_hash: str):
     check_password_or_raise(password)
     try:
         ramdb = RAMDB()
+        user_hash, _ = split_user_hash(user_hash)
         ramdb.remove_user(user_hash)
         table, hashes = ramdb.get_ready_users_table()
         if len(hashes) == 0 or table is None or hashes is None:
@@ -51,15 +83,19 @@ def user_delete_fn(password: str, user_hash: str):
         raise gr.Error(str(e))
 
 
-def presentation_slide_change(password: str, slider: int):
+def presentation_slide_change(password: str, slider: int, scale: float):
     if slider == -1:
         return
     check_password_or_raise(password)
     try:
+        factor = scale/100
         ramdb = RAMDB()
         image = ramdb.get_slide(slider)
         ramdb.set_cur_slide(slider)
-        return image
+        original_size = image.size
+        new_size = (int(original_size[0] * factor), int(original_size[1] * factor))
+        resized_image = image.resize(new_size, Image.LANCZOS)
+        return resized_image
     except Exception as e:
         raise gr.Error(str(e))
 
@@ -111,7 +147,8 @@ def gradio_interface_teacher_entry_point():
                 reset_ready_button = gr.Button("Сброс")
             with gr.Row():
                 table = gr.Dataframe(headers=["Хэш", "Имя", "Готовность"],
-                                        label="Таблица готовности", wrap=True, column_widths=["15%", "75%", "10%"], interactive=False)
+                                        label="Таблица готовности", wrap=True, column_widths=["15%", "75%", "10%"], interactive=False,
+                                     every=1, value=show_table_fn, inputs=[password])
             with gr.Group():
                 users_dropbox = gr.Dropdown()
                 user_set_unready = gr.Button("Не готов")
@@ -120,7 +157,7 @@ def gradio_interface_teacher_entry_point():
             with gr.Row():
                 presentation_file = gr.File(label="Файл презентации (PDF ТОЛЬКО)")
                 load_presentation_button = gr.Button("Загрузить презентацию")
-                gr.Markdown("# Слушателям нужно нажать кнопку \"Обновить презентацию\" после загрузки")
+                scale = gr.Slider(minimum=10, maximum=300, value=100, step=10, interactive=True, label="Масштаб, %")
             with gr.Row():
                 presentation_slider = gr.Slider(minimum=-100, maximum=100, value=-1, step=1, interactive=False, label="Номер слайда")
                 presentation_prev_button = gr.Button("⬅️️")
@@ -134,6 +171,6 @@ def gradio_interface_teacher_entry_point():
     user_delete.click(fn=user_delete_fn, inputs=[password, users_dropbox], outputs=[table, users_dropbox])
 
     load_presentation_button.click(fn=presentation_load, inputs=[password, presentation_file], outputs=[presentation_slider, presentation_image])
-    presentation_slider.change(fn=presentation_slide_change, inputs=[password, presentation_slider], outputs=[presentation_image])
+    presentation_slider.change(fn=presentation_slide_change, inputs=[password, presentation_slider, scale], outputs=[presentation_image])
     presentation_prev_button.click(fn=presentation_prev, inputs=[password, presentation_slider], outputs=[presentation_slider])
     presentation_next_button.click(fn=presentation_next, inputs=[password, presentation_slider], outputs=[presentation_slider])

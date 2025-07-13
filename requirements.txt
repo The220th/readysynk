@@ -3,6 +3,6 @@ argparse
 ksupk
 numpy
 tqdm
-gradio
+gradio==5.25.0
 pyyaml
 pdf2image

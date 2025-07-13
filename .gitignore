@@ -5,3 +5,4 @@ venv
 build
 dist
 readysynk.egg-info
+set.yaml

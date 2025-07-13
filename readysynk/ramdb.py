@@ -34,7 +34,7 @@ class RAMDB:
                 user_name = self.users[user_hash]["name"]
                 user_ready = "✅" if self.users[user_hash]["ready"] == True else "❌"
                 res.append([f"{user_hash}", f"{user_name}", f"{user_ready}"])
-                res_hashes.append(f"{user_hash}")
+                res_hashes.append(f"{user_hash}:::{user_name}")
         return res, res_hashes
 
     def set_unready(self, user_hash: str):
