@@ -1,11 +1,19 @@
 # coding: utf-8
 
 
+import os
 from ksupk import singleton_decorator
 from threading import Lock
 from pathlib import Path
 from pdf2image import convert_from_path
 from PIL import Image
+
+
+def is_windows() -> bool:
+    if os.name == 'nt':
+        return True
+    else:
+        return False
 
 
 @singleton_decorator
@@ -61,8 +69,17 @@ class RAMDB:
         pr_file_path = Path(pr_file_path)
 
         with self.pr_lock:
-            images = convert_from_path(pr_file_path)
+            # https://stackoverflow.com/questions/53481088/poppler-in-path-for-pdf2image
+            if is_windows():
+                images = convert_from_path(pr_file_path, poppler_path=r'poppler\poppler-24.08.0\Library\bin')
+            else:
+                images = convert_from_path(pr_file_path)
             self.presentation = images
+
+    def clear_presentation(self):
+        with self.pr_lock:
+            white_image = Image.new("RGB", (400, 400), "white")
+            self.presentation = [white_image]
 
     def get_all_presentation(self) -> list[Image.Image]:
         with self.pr_lock:

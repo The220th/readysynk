@@ -112,6 +112,18 @@ def presentation_load(password: str, file: str):
         raise gr.Error(str(e))
 
 
+def presentation_clear(password: str):
+    check_password_or_raise(password)
+    try:
+        ramdb = RAMDB()
+        ramdb.clear_presentation()
+        image = ramdb.get_slide(1)
+        ramdb.set_cur_slide(1)
+        return gr.update(minimum=1, maximum=ramdb.get_slides_num(), value=1, step=1, interactive=True), image
+    except Exception as e:
+        raise gr.Error(str(e))
+
+
 def presentation_next(password: str, slider: int):
     check_password_or_raise(password)
     try:
@@ -139,7 +151,7 @@ def presentation_prev(password: str, slider: int):
 
 
 def gradio_interface_teacher_entry_point():
-    password = gr.Textbox(label="🔐 Пароль", interactive=True)
+    password = gr.Textbox(label="🔐 Пароль", interactive=True, type="password")
     with gr.Tabs():
         with gr.Tab("Готовность"):
             with gr.Row():
@@ -157,6 +169,7 @@ def gradio_interface_teacher_entry_point():
             with gr.Row():
                 presentation_file = gr.File(label="Файл презентации (PDF ТОЛЬКО)")
                 load_presentation_button = gr.Button("Загрузить презентацию")
+                clear_presentation_button = gr.Button("🗑 Очистить презентацию")
                 scale = gr.Slider(minimum=10, maximum=300, value=100, step=10, interactive=True, label="Масштаб, %")
             with gr.Row():
                 presentation_slider = gr.Slider(minimum=-100, maximum=100, value=-1, step=1, interactive=False, label="Номер слайда")
@@ -171,6 +184,7 @@ def gradio_interface_teacher_entry_point():
     user_delete.click(fn=user_delete_fn, inputs=[password, users_dropbox], outputs=[table, users_dropbox])
 
     load_presentation_button.click(fn=presentation_load, inputs=[password, presentation_file], outputs=[presentation_slider, presentation_image])
+    clear_presentation_button.click(fn=presentation_clear, inputs=[password], outputs=[presentation_slider, presentation_image])
     presentation_slider.change(fn=presentation_slide_change, inputs=[password, presentation_slider, scale], outputs=[presentation_image])
     presentation_prev_button.click(fn=presentation_prev, inputs=[password, presentation_slider], outputs=[presentation_slider])
     presentation_next_button.click(fn=presentation_next, inputs=[password, presentation_slider], outputs=[presentation_slider])

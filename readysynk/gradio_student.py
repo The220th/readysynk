@@ -48,7 +48,7 @@ def gradio_interface_student_entry_point():
     with gr.Tabs():
         with gr.Tab("Интерактив"):
             with gr.Row():
-                name = gr.Textbox(label="Обозначьте себя: ")
+                name = gr.Textbox(label="Введите ФИО и рабочее место (РМ). Например, \"Иванов Иван Иванович (РМ 3)\"): ")
             with gr.Row():
                 ready_button = gr.Button("✅ Сообщить об готовности")
 

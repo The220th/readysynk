@@ -17,7 +17,7 @@ def start_gradio_interface():
             height: 2em;
         }
 """
-    with gr.Blocks(css=css_str) as demo:
+    with gr.Blocks(css=css_str, title="ПУ выполнения ПЗ") as demo:
         with gr.Tabs():
             with gr.Tab("Слушатель"):
                 gradio_interface_student_entry_point()
