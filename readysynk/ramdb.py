@@ -8,6 +8,8 @@ from pathlib import Path
 from pdf2image import convert_from_path
 from PIL import Image
 
+from readysynk.settings_manager import SettingsManager
+
 
 def is_windows() -> bool:
     if os.name == 'nt':
@@ -71,7 +73,11 @@ class RAMDB:
         with self.pr_lock:
             # https://stackoverflow.com/questions/53481088/poppler-in-path-for-pdf2image
             if is_windows():
-                images = convert_from_path(pr_file_path, poppler_path=r'poppler\poppler-24.08.0\Library\bin')
+                poppler_path = SettingsManager().get_windows_poppler_path()
+                if poppler_path != "":
+                    images = convert_from_path(pr_file_path, poppler_path=poppler_path)
+                else:
+                    images = convert_from_path(pr_file_path)
             else:
                 images = convert_from_path(pr_file_path)
             self.presentation = images

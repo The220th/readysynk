@@ -6,4 +6,5 @@ build
 dist
 readysynk.egg-info
 set.yaml
+settings.yaml
 installed.txt

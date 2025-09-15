@@ -28,3 +28,8 @@ class SettingsManager:
 
     def is_share(self) -> bool:
         return self.data["connection"]["share"]
+
+    # =========================================== windows
+
+    def get_windows_poppler_path(self) -> Path:
+        return self.data["windows"]["poppler_bin_path"]
